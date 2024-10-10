@@ -1,5 +1,7 @@
 package com.fitness.user_profile.service;
 
+import com.fitness.user_profile.exception.FitnessGoalsNotFoundException;
+import com.fitness.user_profile.exception.UserNotFoundException;
 import com.fitness.user_profile.model.UserProfile;
 import com.fitness.user_profile.repo.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +51,8 @@ public class UserService {
         if (userProfile.isPresent()) {
             logger.info("User profile found: {}", userProfile.get());
         } else {
-            logger.warn("User profile not found for id: {}", id);
+            logger.warn("user not found for id: {}", id);
+            throw new UserNotFoundException("User  not found for id: " + id);
         }
         return userProfile;
     }
@@ -74,6 +77,9 @@ public class UserService {
      */
     public void deleteUser(String id) {
         logger.info("Deleting user profile with id: {}", id);
+        if (!repository.existsById(id)) {
+            throw new UserNotFoundException("User profile not found for id " + id);
+        }
         repository.deleteById(id);
         logger.info("Deleted user profile with id: {}", id);
     }
@@ -98,8 +104,8 @@ public class UserService {
             logger.info("Added goal to user profile: {}", userProfile);
             return "Goal Added";
         } else {
-            logger.warn("User  not found for id: {}", id);
-            return "User profile not found";
+            logger.warn("User profile not found for id: {}", id);
+            throw new UserNotFoundException("User profile not found for id: " + id);
         }
     }
 
@@ -114,11 +120,14 @@ public class UserService {
         Optional<UserProfile> userProfileOptional = repository.findById(id);
         if (userProfileOptional.isPresent()) {
             List<String> goals = userProfileOptional.get().getFitnessGoals();
+            if (goals == null || goals.isEmpty()) {
+                throw new FitnessGoalsNotFoundException("No fitness goals found for user profile with id: " + id);
+            }
             logger.info("Retrieved goals for user profile: {}", goals);
             return goals;
         } else {
-            logger.warn("profile not found for id: {}", id);
-            return new ArrayList<>();
+            logger.warn(" profile not found for id: {}", id);
+            throw new UserNotFoundException("User profile not found for id: " + id);
         }
     }
 
