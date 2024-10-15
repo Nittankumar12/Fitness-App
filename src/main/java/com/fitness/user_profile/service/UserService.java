@@ -49,7 +49,7 @@ public class UserService {
         logger.info("Retrieving user profile with id: {}", id);
         Optional<UserProfile> userProfile = repository.findById(id);
         if (userProfile.isPresent()) {
-            logger.info("User profile found: {}", userProfile.get());
+            logger.info("User profile found: {}", userProfile.get().getId());
         } else {
             logger.warn("user not found for id: {}", id);
             throw new UserNotFoundException("User  not found for id: " + id);
@@ -77,10 +77,12 @@ public class UserService {
      */
     public void deleteUser(String id) {
         logger.info("Deleting user profile with id: {}", id);
-        if (!repository.existsById(id)) {
+        Optional<UserProfile> userProfile = repository.findById(id);
+
+        if (!userProfile.isPresent()) {
             throw new UserNotFoundException("User profile not found for id " + id);
         }
-        repository.deleteById(id);
+        repository.delete(userProfile.get());
         logger.info("Deleted user profile with id: {}", id);
     }
 
