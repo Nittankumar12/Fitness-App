@@ -7,6 +7,7 @@ import com.azure.spring.data.cosmos.config.CosmosConfig;
 import com.azure.spring.data.cosmos.core.ResponseDiagnostics;
 import com.azure.spring.data.cosmos.core.ResponseDiagnosticsProcessor;
 import com.azure.spring.data.cosmos.repository.config.EnableCosmosRepositories;
+import com.fitness.user_profile.util.LogMessages;
 import io.micrometer.common.lang.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ public class CosmosConfiguration extends AbstractCosmosConfiguration {
      */
     @Bean
     public CosmosClientBuilder cosmosClientBuilder() {
-        logger.info("Creating CosmosClientBuilder with URI: {}", uri);
+        logger.info(LogMessages.CREATING_COSMOS_CLIENT, uri);
         DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
         return new CosmosClientBuilder()
                 .endpoint(uri)
@@ -54,7 +55,7 @@ public class CosmosConfiguration extends AbstractCosmosConfiguration {
      */
     @Bean
     public CosmosConfig cosmosConfig() {
-        logger.info("Creating CosmosConfig with query metrics enabled");
+        logger.info(LogMessages.CREATING_COSMOS_CONFIG);
         return CosmosConfig.builder()
                 .responseDiagnosticsProcessor(new ResponseDiagnosticsProcessorImplementation())
                 .enableQueryMetrics(true)
@@ -68,7 +69,7 @@ public class CosmosConfiguration extends AbstractCosmosConfiguration {
      */
     @Override
     protected String getDatabaseName() {
-        logger.info("Getting database name: {}", dbName);
+        logger.info(LogMessages.GETTING_DB_NAME, dbName);
         return dbName;
     }
 
@@ -80,9 +81,9 @@ public class CosmosConfiguration extends AbstractCosmosConfiguration {
         @Override
         public void processResponseDiagnostics(@Nullable ResponseDiagnostics responseDiagnostics) {
             if (responseDiagnostics != null) {
-                logger.info("Response Diagnostics: {}", responseDiagnostics);
+                logger.info(LogMessages.RESPONSE_DIAGNOSTICS, responseDiagnostics);
             } else {
-                logger.warn("Response Diagnostics is null");
+                logger.warn(LogMessages.RESPONSE_DIAGNOSTICS_NULL);
             }
         }
     }
