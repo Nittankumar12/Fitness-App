@@ -20,11 +20,10 @@ public class UserProfile {
     @GeneratedValue
     private String id;
     private String name;
-    private String email;
-    private int age;
 
     @PartitionKey
+    private String email;
+    private int age;
     private String gender;
-
     private List<FitnessGoals> fitnessGoals;
 }
