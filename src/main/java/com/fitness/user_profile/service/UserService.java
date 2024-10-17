@@ -5,9 +5,9 @@ import com.fitness.user_profile.exception.GenericException;
 import com.fitness.user_profile.exception.UserNotFoundException;
 import com.fitness.user_profile.model.FitnessGoals;
 import com.fitness.user_profile.model.UserProfile;
+import com.fitness.user_profile.repo.FitnessGoalsRepository;
 import com.fitness.user_profile.repo.UserProfileRepository;
 import com.fitness.user_profile.util.LogMessages;
-import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 /**
  * Service class for managing user profiles.
@@ -29,6 +28,9 @@ public class UserService {
     @Autowired
     private UserProfileRepository repository;
 
+    @Autowired
+    private FitnessGoalsRepository fitnessGoalsRepository;
+
     /**
      * Creates a new user profile.
      *
@@ -37,7 +39,27 @@ public class UserService {
      */
     public UserProfile createUser(UserProfile userProfile) {
         try {
-            UserProfile createdUserProfile = repository.save(userProfile);
+            UserProfile newUserProfile = new UserProfile();
+
+            newUserProfile.setName(userProfile.getName());
+            newUserProfile.setEmail(userProfile.getEmail());
+            newUserProfile.setAge(userProfile.getAge());
+            newUserProfile.setGender(userProfile.getGender());
+            newUserProfile = repository.save(newUserProfile);
+            System.out.println(newUserProfile);
+            logger.info(LogMessages.USER_PROFILE_CREATED,newUserProfile.getId());
+            logger.info(LogMessages.SETTING_GOAL);
+
+            for(FitnessGoals goal: userProfile.getFitnessGoals()){
+                FitnessGoals fitnessGoal = new FitnessGoals();
+                fitnessGoal.setGoal(goal.getGoal());
+                fitnessGoal.setUserId(newUserProfile.getId());
+                fitnessGoalsRepository.save(fitnessGoal);
+            }
+
+            newUserProfile.setFitnessGoals(fitnessGoalsRepository.getFitnessGoalsByUserId(newUserProfile.getId()));
+
+            UserProfile createdUserProfile = repository.save(newUserProfile);
             logger.info(LogMessages.USER_PROFILE_CREATED, createdUserProfile.getId());
             return createdUserProfile;
         } catch (GenericException e) {
@@ -74,7 +96,6 @@ public class UserService {
         }
     }
 
-
     /**
      * Updates an existing user profile.
      *
@@ -106,7 +127,6 @@ public class UserService {
             throw new GenericException("An unexpected error occurred while updating the user profile");
         }
     }
-
 
     /**
      * Deletes a user profile by ID.
@@ -153,6 +173,8 @@ public class UserService {
                 FitnessGoals fitnessGoal = new FitnessGoals();
                 logger.info(LogMessages.SETTING_GOAL);
                 fitnessGoal.setGoal(newGoal);
+                fitnessGoal.setUserId(userProfile.getId());
+                fitnessGoal = fitnessGoalsRepository.save(fitnessGoal);
                 userProfile.getFitnessGoals().add(fitnessGoal);
 
                 repository.save(userProfile);
@@ -199,5 +221,4 @@ public class UserService {
             throw new GenericException("An unexpected error occurred while fetching goals for the user profile");
         }
     }
-
 }
