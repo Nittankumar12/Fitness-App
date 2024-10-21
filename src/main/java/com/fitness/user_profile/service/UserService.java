@@ -3,10 +3,12 @@ package com.fitness.user_profile.service;
 import com.fitness.user_profile.exception.FitnessGoalsNotFoundException;
 import com.fitness.user_profile.exception.GenericException;
 import com.fitness.user_profile.exception.UserNotFoundException;
-import com.fitness.user_profile.model.FitnessGoals;
-import com.fitness.user_profile.model.UserProfile;
+import com.fitness.user_profile.entity.FitnessGoals;
+import com.fitness.user_profile.entity.UserProfile;
+import com.fitness.user_profile.model.UserModel;
 import com.fitness.user_profile.repo.FitnessGoalsRepository;
 import com.fitness.user_profile.repo.UserProfileRepository;
+import com.fitness.user_profile.util.Conversions;
 import com.fitness.user_profile.util.LogMessages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,37 +33,49 @@ public class UserService {
     @Autowired
     private FitnessGoalsRepository fitnessGoalsRepository;
 
+    @Autowired
+    private Conversions conversions;
+
     /**
      * Creates a new user profile.
      *
-     * @param userProfile The user profile to create.
+     * @param userModel The user profile to create.
      * @return The created UserProfile.
      */
-    public UserProfile createUser(UserProfile userProfile) {
+    public UserModel createUser(UserModel userModel) {
         try {
-            UserProfile newUserProfile = new UserProfile();
-
-            newUserProfile.setName(userProfile.getName());
-            newUserProfile.setEmail(userProfile.getEmail());
-            newUserProfile.setAge(userProfile.getAge());
-            newUserProfile.setGender(userProfile.getGender());
+            UserProfile newUserProfile = conversions.modelToEntity(userModel);
             newUserProfile = repository.save(newUserProfile);
-            System.out.println(newUserProfile);
-            logger.info(LogMessages.USER_PROFILE_CREATED,newUserProfile.getId());
+
+            logger.info(LogMessages.USER_PROFILE_CREATED, newUserProfile.getId());
             logger.info(LogMessages.SETTING_GOAL);
 
-            for(FitnessGoals goal: userProfile.getFitnessGoals()){
-                FitnessGoals fitnessGoal = new FitnessGoals();
-                fitnessGoal.setGoal(goal.getGoal());
-                fitnessGoal.setUserId(newUserProfile.getId());
-                fitnessGoalsRepository.save(fitnessGoal);
+            // Handle setting goals only if there are any in userModel
+            if (userModel.getFitnessGoals() != null) {
+                for (String goal : userModel.getFitnessGoals()) {
+                    FitnessGoals fitnessGoal = new FitnessGoals();
+                    fitnessGoal.setGoal(goal);
+                    fitnessGoal.setUserId(newUserProfile.getId());
+                    fitnessGoalsRepository.save(fitnessGoal);
+                }
             }
 
+            // Fetch the saved fitness goals from repository
             newUserProfile.setFitnessGoals(fitnessGoalsRepository.getFitnessGoalsByUserId(newUserProfile.getId()));
 
-            UserProfile createdUserProfile = repository.save(newUserProfile);
-            logger.info(LogMessages.USER_PROFILE_CREATED, createdUserProfile.getId());
-            return createdUserProfile;
+            // Save the updated user profile with goals
+            newUserProfile = repository.save(newUserProfile);
+
+            // Convert entity back to model
+            UserModel returnUserModel = conversions.entityToModel(newUserProfile, newUserProfile.getFitnessGoals());
+
+            if (returnUserModel != null) {
+                logger.info(LogMessages.USER_PROFILE_CREATED, returnUserModel.getId());
+                return returnUserModel;
+            } else {
+                logger.error("Failed to convert entity to model.");
+                throw new GenericException("Failed to convert entity to model");
+            }
         } catch (GenericException e) {
             logger.error(LogMessages.GENERIC_EXCEPTION, e.getMessage());
             throw new GenericException("An error occurred while creating the user profile");
@@ -77,12 +91,12 @@ public class UserService {
      * @param id The ID of the user profile to retrieve.
      * @return An Optional containing the UserProfile if found, or empty if not found.
      */
-    public UserProfile getUser(String id) {
+    public UserModel getUser(String id) {
         try {
             Optional<UserProfile> userProfile = repository.findById(id);
             if (userProfile.isPresent()) {
                 logger.info(LogMessages.FOUND_USER_PROFILE, userProfile.get().getId());
-                return userProfile.get();
+                return conversions.entityToModel(userProfile.get(),userProfile.get().getFitnessGoals());
             } else {
                 logger.warn(LogMessages.USER_NOT_FOUND_EXCEPTION, id);
                 throw new UserNotFoundException("User not found for id: " + id);
@@ -96,37 +110,50 @@ public class UserService {
         }
     }
 
-    /**
+     /**
      * Updates an existing user profile.
      *
-     * @param id          The ID of the user profile to update.
-     * @param userProfile The updated user profile data.
+     * @param id  The ID of the user profile to update.
+     * @param userModel The updated user profile data.
      * @return The updated UserProfile.
      **/
-    public UserProfile updateUser(String id, UserProfile userProfile) {
-        try {
-            Optional<UserProfile> existingUserProfile = repository.findById(id);
-            if (existingUserProfile.isPresent()) {
-                logger.info(LogMessages.FOUND_USER_PROFILE,id);
-                UserProfile updatedUserProfile = existingUserProfile.get();
-                updatedUserProfile.setName(userProfile.getName());
-                updatedUserProfile.setEmail(userProfile.getEmail());
+                public UserModel updateUser(String id, UserModel userModel) {
+                    try {
+                        Optional<UserProfile> existingUserProfileOpt = repository.findById(id);
 
-                UserProfile savedUserProfile = repository.save(updatedUserProfile);
-                logger.info(LogMessages.USER_PROFILE_UPDATED, savedUserProfile.getId());
-                return savedUserProfile;
-            } else {
-                logger.warn(LogMessages.USER_NOT_FOUND_EXCEPTION, id);
-                throw new UserNotFoundException("User not found for id: " + id);
-            }
-        } catch (GenericException e) {
-            logger.error(LogMessages.GENERIC_EXCEPTION, e.getMessage());
-            throw new GenericException("An error occurred while updating the user profile");
-        } catch (Exception e) {
-            logger.error(LogMessages.UNEXPECTED_EXCEPTION, e);
-            throw new GenericException("An unexpected error occurred while updating the user profile");
-        }
-    }
+                        if (existingUserProfileOpt.isPresent()) {
+                            logger.info(LogMessages.FOUND_USER_PROFILE, id);
+                            UserProfile existingUserProfile = existingUserProfileOpt.get();
+
+                                existingUserProfile.setName(userModel.getName());
+                                existingUserProfile.setEmail(userModel.getEmail());
+                                existingUserProfile.setAge(userModel.getAge());
+                                existingUserProfile.setGender(userModel.getGender());
+                            if (userModel.getFitnessGoals() != null && !userModel.getFitnessGoals().isEmpty()) {
+
+                                List<FitnessGoals> fitnessGoals = new ArrayList<>();
+                                for(String goal: userModel.getFitnessGoals()){
+                                    FitnessGoals fitnessGoals1 = new FitnessGoals();
+                                    fitnessGoals1.setGoal(goal);
+                                    fitnessGoals1.setUserId(existingUserProfile.getId());
+                                    fitnessGoalsRepository.save(fitnessGoals1);
+                                }
+                                existingUserProfile.setFitnessGoals(fitnessGoals);
+                            }
+
+                            // Save the updated user profile
+                            UserProfile savedUserProfile = repository.save(existingUserProfile);
+                            logger.info(LogMessages.USER_PROFILE_UPDATED, savedUserProfile.getId());
+                            return conversions.entityToModel(savedUserProfile, existingUserProfile.getFitnessGoals()); // Ensure to return UserModel
+                        } else {
+                            logger.warn(LogMessages.USER_NOT_FOUND_EXCEPTION, id);
+                            throw new UserNotFoundException("User not found for id: " + id);
+                        }
+                    } catch (GenericException e) {
+                        logger.error(LogMessages.GENERIC_EXCEPTION, e.getMessage());
+                        throw new GenericException("An error occurred while updating the user profile");
+                    }
+                }
 
     /**
      * Deletes a user profile by ID.
@@ -152,7 +179,7 @@ public class UserService {
         }
     }
 
-   /**
+    /**
      * Adds a new goal to a user's profile.
      *
      * @param id      The ID of the user profile.

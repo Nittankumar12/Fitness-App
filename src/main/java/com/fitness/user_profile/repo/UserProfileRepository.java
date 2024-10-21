@@ -1,7 +1,7 @@
 package com.fitness.user_profile.repo;
 
 import com.azure.spring.data.cosmos.repository.CosmosRepository;
-import com.fitness.user_profile.model.UserProfile;
+import com.fitness.user_profile.entity.UserProfile;
 import org.springframework.stereotype.Repository;
 
 /**

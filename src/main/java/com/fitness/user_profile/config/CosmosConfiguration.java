@@ -53,6 +53,7 @@ public class CosmosConfiguration extends AbstractCosmosConfiguration {
      *
      * @return CosmosConfig instance.
      */
+    @Override
     @Bean
     public CosmosConfig cosmosConfig() {
         logger.info(LogMessages.CREATING_COSMOS_CONFIG);

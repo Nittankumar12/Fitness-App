@@ -2,7 +2,7 @@ package com.fitness.user_profile.repo;
 
 import com.azure.spring.data.cosmos.repository.CosmosRepository;
 import com.azure.spring.data.cosmos.repository.Query;
-import com.fitness.user_profile.model.FitnessGoals;
+import com.fitness.user_profile.entity.FitnessGoals;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 

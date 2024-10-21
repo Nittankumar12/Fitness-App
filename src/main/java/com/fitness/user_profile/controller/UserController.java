@@ -1,7 +1,7 @@
 package com.fitness.user_profile.controller;
 
-import com.fitness.user_profile.model.FitnessGoals;
-import com.fitness.user_profile.model.UserProfile;
+import com.fitness.user_profile.entity.FitnessGoals;
+import com.fitness.user_profile.model.UserModel;
 import com.fitness.user_profile.service.UserService;
 import com.fitness.user_profile.util.ApiResponse;
 import com.fitness.user_profile.util.LogMessages;
@@ -23,34 +23,27 @@ public class UserController {
 
     private final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @GetMapping("/demo")
-    public ResponseEntity<ApiResponse<String>> demo() {
-        logger.info(LogMessages.ENTERING_METHOD, "demo()");
-        String response = "Working";
-        logger.info(LogMessages.EXITING_METHOD, "demo()");
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Demo endpoint is working", response));
-    }
 
     @PostMapping("/create")
-    public ResponseEntity<ApiResponse<UserProfile>> createUser(@RequestBody UserProfile userProfile) {
+    public ResponseEntity<ApiResponse<UserModel>> createUser(@RequestBody UserModel userProfile) {
         logger.info(LogMessages.ENTERING_METHOD, "createUser()");
-        UserProfile createdUserProfile = userService.createUser(userProfile);
+        UserModel createdUserProfile = userService.createUser(userProfile);
         logger.info(LogMessages.EXITING_METHOD, "createUser()");
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.CREATED.value(), "User profile created successfully", createdUserProfile));
     }
 
     @GetMapping("/user/{id}")
-    public ResponseEntity<ApiResponse<UserProfile>> getUser(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<UserModel>> getUser(@PathVariable String id) {
         logger.info(LogMessages.ENTERING_METHOD, "getUser()");
-        UserProfile userProfile = userService.getUser(id);
+        UserModel userProfile = userService.getUser(id);
         logger.info(LogMessages.EXITING_METHOD, "getUser()");
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User profile retrieved successfully", userProfile));
     }
 
     @PutMapping("/user/{id}")
-    public ResponseEntity<ApiResponse<UserProfile>> updateUser(@PathVariable String id, @RequestBody UserProfile userProfile) {
+    public ResponseEntity<ApiResponse<UserModel>> updateUser(@PathVariable String id, @RequestBody UserModel userProfile) {
         logger.info(LogMessages.ENTERING_METHOD, "updateUser()");
-        UserProfile updatedUserProfile = userService.updateUser(id, userProfile);
+        UserModel updatedUserProfile = userService.updateUser(id, userProfile);
         logger.info(LogMessages.EXITING_METHOD, "updateUser()");
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User profile updated successfully", updatedUserProfile));
     }
